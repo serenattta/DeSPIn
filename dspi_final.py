@@ -34,19 +34,7 @@ SYSTEM_PROMPT = """
 """
 ###############################################################################
 def parse_command_with_LLM(command_text):
-    """
-    假设我们可以通过某种接口调用树莓派上部署的 Deepseek LLM。
-    这里写成一个占位函数，演示如何拿到一个结构化结果。
 
-    示例：
-      输入: "去找红色的球再拿回来"
-      输出: {"action": "find", "object": "ball", "color": "red"}
-
-    如果 LLM 仅输出一个字符串 "red"，则可以直接返回字符串。
-    """
-
-    # tts = TTS()
-    # tts.lang("en-US")
     client = Client(
         host='http://localhost:8888',
     )
@@ -89,7 +77,7 @@ def u_turn(px, search_speed=10):
     让小车在旋转过程中不断使用摄像头检测目标
     """
     xxx = Vilib.detect_obj_parameter['color_n']
-    print(f"U-Turn, checking camera {xxx}...")
+    print(f"🔄 目标丢失，执行 U-Turn 掉头，过程中检查摄像头{xxx}...")
     
     rotation_angle = 6  # 初始旋转角度
     max_rotation_angle = 35  # 最大旋转角度
@@ -105,13 +93,13 @@ def u_turn(px, search_speed=10):
             if Vilib.detect_obj_parameter['color_n'] != 0:
                 px.forward(0)
                 time.sleep(0.05)
-                print("Found target, stop U-Turn")
+                print("🎯 旋转过程中找到目标，立即停止 U-Turn")
                 return  # **找到目标就停止旋转**
 
         # 动态调整旋转角度
         rotation_angle = min(rotation_angle + 5, max_rotation_angle)
 
-    print("U-Turn completed, target not found, stop")
+    print("❌ 旋转完成，未找到目标，停止")
     px.forward(0)  # **停止**
 
 
@@ -179,14 +167,14 @@ def track_color_with_search(px, target_color="green", speed=50, search_speed=30,
             # 0) 避开障碍
             distance = round(px.ultrasonic.read(), 2)
             if 0 < distance < DangerDistance:
-                print("distance: ",distance, "Avoiding obstacles")
+                print("distance: ",distance, "🚫 避开障碍")
                 px.set_dir_servo_angle(-30)
                 px.backward(speed/2)
                 time.sleep(0.5)
                 continue
 
             elif 0 < distance < SafeDistance:
-                print("distance: ",distance, "Approaching obstacles")
+                print("distance: ",distance, "🚫 靠近障碍")
                 px.set_dir_servo_angle(30)
                 px.forward(speed/2)
                 time.sleep(0.5)
@@ -225,12 +213,12 @@ def track_color_with_search(px, target_color="green", speed=50, search_speed=30,
                 color_h = Vilib.detect_obj_parameter['color_h']
                 color_area = color_w * color_h  # 计算目标面积
 
-                print(f"Current target area: {color_area},   Distance: {distance}")
+                print(f"📏 当前目标面积: {color_area},   {distance}")
 
                 # **检测目标是否达到足够接近的阈值**
                 if (color_area >= found_area) and (distance < 100):
                         px.forward(0)
-                        print(f"Approaching target (area >= {found_area},Distance = {distance}), Play music")
+                        print(f"🎯 目标已接近 (面积 >= {found_area},Distance = {distance})，播放音乐！")
                         play_music()
                         # 停止小车
                         time.sleep(1)  # 停留 1 秒
@@ -242,7 +230,7 @@ def track_color_with_search(px, target_color="green", speed=50, search_speed=30,
                     lost_time = time.time()  # **记录最初丢失目标的时间**
                 
                 lost_count += 1
-                print(f"Finding mode (Lost count): {lost_count}, Current target color: {target_color}")
+                print(f"[搜索模式] 丢失目标次数: {lost_count}, 当前目标: {target_color}")
 
                 # **短暂丢失（小于 5 秒），等待目标重现**
                 if time.time() - lost_time < 2:
@@ -250,7 +238,7 @@ def track_color_with_search(px, target_color="green", speed=50, search_speed=30,
                     time.sleep(0.1)
                 else:
                     # 目标丢失执行转弯
-                    print("Target lost, U-Turn")
+                    print("🔄 目标丢失 2 秒，执行 U-Turn")
                     u_turn(px)
                     lost_count = 0
                     lost_time = time.time()
@@ -281,10 +269,10 @@ def main():
         target_color = parsed[i].get("target", None).lower()
 
         if target_color not in color_list:
-            print(f"Target color not supported: {target_color}")
+            print(f"❌ 无法识别的目标颜色: {target_color}")
             continue  # 跳过这个目标
 
-        print(f"\n Finding the {parsed[i]['step']} target color: {target_color}")
+        print(f"\n🚗 开始寻找第 {parsed[i]['step']} 步目标颜色: {target_color}")
     
         # 追踪颜色目标
         try:
@@ -294,7 +282,7 @@ def main():
             print("\nCTRL C detected, Safely exiting...\n")
             stop_signal = True  # 让主循环退出
 
-    print("All target colors found")
+    print("✅ 所有目标颜色查找任务已完成！")
     
     play_music(MUSIC_FILE = "triumph.mp3")
     print("[LLM Result] : Target Color = ", target_color)
